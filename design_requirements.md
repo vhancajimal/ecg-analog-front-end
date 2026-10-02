@@ -32,8 +32,8 @@ ECG input
 
 | Parameter | Target |
 |---|---:|
-| Overall differential gain | ~1000 V/V |
-| First-stage gain | 10–20 V/V |
+Overall differential gain | ~500 V/V
+First-stage gain | ~5 V/V
 | High-pass cutoff | ~0.5 Hz |
 | Low-pass cutoff | ~40 Hz |
 | CMRR | > 80 dB |
