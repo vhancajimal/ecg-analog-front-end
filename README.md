@@ -198,13 +198,17 @@ As the resistor ratios become increasingly unequal, a larger fraction of the 50 
 
 ## Repository Structure
 
+```text
 ecg-analog-front-end/
 │
 ├── docs/
 │   └── design_requirements.md
 │
 ├── ltspice/
-│   └── LTspice simulation files
+│   ├── ina_common_mode_ideal.asc
+│   ├── ina_common_mode_mismatch_1pct.asc
+│   ├── ina_common_mode_mismatch_sweep.asc
+│   └── ina_differential_gain_sweep.asc
 │
 ├── python/
 │   └── plot_cmrr_results.py
@@ -214,6 +218,7 @@ ecg-analog-front-end/
 │   └── common_mode_gain_vs_resistor_mismatch.png
 │
 └── README.md
+```
 
 ---
 
