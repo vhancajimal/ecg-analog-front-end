@@ -2,7 +2,7 @@
 
 A simulated ECG analog front-end (AFE) developed in LTspice and supported by Python-based analysis.
 
-The project focuses on the analog signal-conditioning stages that precede digital ECG processing: differential amplification, common-mode rejection, band-limiting, final amplification, resistor-tolerance analysis, output headroom, realistic op-amp modeling, and validation with a real ECG waveform.
+The project focuses on differential amplification, common-mode rejection, analog band-limiting, output headroom, realistic op-amp modeling, and validation using a real ECG waveform from the MIT-BIH Arrhythmia Database.
 
 This project complements my digital ECG signal-processing project:
 
@@ -10,9 +10,23 @@ https://github.com/vhancajimal/ecg-signal-processing
 
 ---
 
+## Key Results
+
+- ~465 V/V overall gain at 10 Hz
+- ~0.45–43.6 Hz simulated analog bandwidth
+- ~80 dB CMRR at 0.1% resistor mismatch
+- CMRR degradation quantified from 0.1% to 2% resistor mismatch
+- Linear operation up to approximately 10 mVpp differential input
+- Output clipping observed between 10 and 11 mVpp
+- LT1679 macromodel validation showed only ~0.02% gain difference versus the generic op-amp model
+- Real MIT-BIH Record 100 ECG successfully conditioned without clipping
+- 1.52 mVpp ECG input produced approximately 0.651 Vpp at the final output
+
+---
+
 ## Project Overview
 
-Electrocardiogram (ECG) signals have small differential amplitudes and may be affected by common-mode interference, baseline variations, and out-of-band noise.
+ECG signals have small differential amplitudes and may be affected by common-mode interference, baseline variations, and out-of-band noise.
 
 The objective of this project was to design and simulate a single-supply analog front-end capable of:
 
@@ -21,12 +35,12 @@ The objective of this project was to design and simulate a single-supply analog 
 - limiting the signal bandwidth,
 - centering the output around a 2.5 V reference,
 - providing sufficient gain for subsequent digitization,
-- evaluating the influence of resistor mismatch on CMRR,
+- evaluating resistor-mismatch effects on CMRR,
 - characterizing output headroom and clipping,
 - comparing generic and realistic op-amp models,
-- and processing a real ECG waveform from the MIT-BIH Arrhythmia Database.
+- and processing a real ECG waveform.
 
-The complete simulated signal chain is:
+The complete signal chain is:
 
 ```text
 Differential ECG input
@@ -69,7 +83,7 @@ The circuit operates from a 0–5 V single supply and uses a 2.5 V reference vol
 | Common-mode test amplitude | 200 mVpp |
 | Real ECG validation | MIT-BIH Record 100 |
 
-The nominal active-stage gain is approximately:
+The nominal active-stage gain is:
 
 ```text
 5 × 100 = 500 V/V
@@ -79,11 +93,11 @@ The complete simulated gain is slightly lower because the passive filter network
 
 ---
 
-# 1. Instrumentation Amplifier
+## 1. Instrumentation Amplifier
 
 The input stage uses a three-op-amp instrumentation-amplifier topology.
 
-## First Stage
+### First Stage
 
 The first two amplifiers use:
 
@@ -106,9 +120,9 @@ G = 1 + 2(10 kΩ)/(5 kΩ)
   = 5
 ```
 
-For a 1 mVpp differential input, this stage produces approximately 5 mVpp before the subsequent filtering and post-amplification stages.
+For a 1 mVpp differential input, the instrumentation stage produces approximately 5 mVpp before the subsequent filtering and post-amplification stages.
 
-## Difference Amplifier
+### Difference Amplifier
 
 The third op-amp uses four nominally matched 20 kΩ resistors:
 
@@ -125,29 +139,27 @@ This stage performs differential subtraction while referencing the output around
 VREF = 2.5 V
 ```
 
-The selected polarity in the difference-amplifier stage produces an inverted final ECG waveform relative to the defined differential input `V(in_plus,in_minus)`. This inversion does not affect the intended signal-conditioning behavior.
+The selected polarity produces an inverted final ECG waveform relative to the defined differential input `V(in_plus,in_minus)`. This inversion does not affect the intended signal-conditioning behavior.
 
 ---
 
-# 2. Common-Mode Rejection Analysis
+## 2. Common-Mode Rejection Analysis
 
-To evaluate common-mode rejection, a 50 Hz common-mode signal was applied simultaneously to both input paths.
+A 50 Hz common-mode signal was applied simultaneously to both input paths.
 
-The test common-mode waveform was:
+The test waveform was:
 
 ```text
 VCM = 2.5 V + 0.1*sin(2*pi*50*t)
 ```
 
-This corresponds to:
+which corresponds to:
 
 ```text
 200 mVpp common-mode interference
 ```
 
-With matched resistors, the difference-amplifier stage strongly rejects this common-mode component.
-
-To investigate resistor-tolerance sensitivity, one 20 kΩ resistor in the subtraction stage was varied according to:
+To evaluate resistor-tolerance sensitivity, one 20 kΩ resistor in the subtraction stage was varied according to:
 
 ```text
 R = 20 kΩ * (1 + mismatch)
@@ -156,24 +168,22 @@ R = 20 kΩ * (1 + mismatch)
 The simulated mismatch values were:
 
 ```text
-0.1 %
-0.5 %
-1.0 %
-2.0 %
+0.1%
+0.5%
+1.0%
+2.0%
 ```
 
-## Differential Gain
-
-The differential gain was measured independently for each mismatch value.
+### Differential Gain
 
 | Resistor mismatch | Differential gain Ad |
 |---:|---:|
-| 0.1 % | 5.0019 |
-| 0.5 % | 5.0167 |
-| 1.0 % | 5.0355 |
-| 2.0 % | 5.0727 |
+| 0.1% | 5.0019 |
+| 0.5% | 5.0167 |
+| 1.0% | 5.0355 |
+| 2.0% | 5.0727 |
 
-## Common-Mode Gain and CMRR
+### Common-Mode Gain and CMRR
 
 The common-mode gain was calculated as:
 
@@ -181,36 +191,28 @@ The common-mode gain was calculated as:
 Acm = Vout_CM_pp / Vin_CM_pp
 ```
 
-CMRR was calculated using:
+CMRR was calculated as:
 
 ```text
 CMRR = 20*log10(Ad/Acm)
 ```
 
-The simulated results were:
-
 | Resistor mismatch | Common-mode gain Acm | CMRR |
 |---:|---:|---:|
-| 0.1 % | 0.000502 | ~80.0 dB |
-| 0.5 % | 0.002501 | ~66.0 dB |
-| 1.0 % | 0.005001 | ~60.1 dB |
-| 2.0 % | 0.010002 | ~54.1 dB |
+| 0.1% | 0.000502 | ~80.0 dB |
+| 0.5% | 0.002501 | ~66.0 dB |
+| 1.0% | 0.005001 | ~60.1 dB |
+| 2.0% | 0.010002 | ~54.1 dB |
 
 The results show that common-mode rejection is strongly dependent on resistor matching in the difference-amplifier stage.
 
-Even relatively small mismatch significantly increases common-mode gain and reduces CMRR.
-
-### CMRR Result
-
 ![CMRR vs resistor mismatch](results/cmrr_vs_resistor_mismatch.png)
-
-### Common-Mode Gain Result
 
 ![Common-mode gain vs resistor mismatch](results/common_mode_gain_vs_resistor_mismatch.png)
 
 ---
 
-# 3. High-Pass Filter
+## 3. High-Pass Filter
 
 A passive high-pass stage was added after the instrumentation amplifier.
 
@@ -245,7 +247,7 @@ This closely matches the theoretical value.
 
 ---
 
-# 4. Low-Pass Filter and Complete Band-Pass Response
+## 4. Low-Pass Filter and Complete Band-Pass Response
 
 The low-pass stage uses:
 
@@ -275,11 +277,9 @@ AC analysis of the complete passive filter network produced:
 
 The -3 dB cutoff frequencies were determined relative to the actual pass-band peak rather than an absolute 0 dB level.
 
-This demonstrates the loading interaction between cascaded passive filters.
-
 ---
 
-# 5. Post-Gain Stage
+## 5. Post-Gain Stage
 
 After band-limiting, a non-inverting amplifier provides the final amplification.
 
@@ -298,8 +298,6 @@ Gpost = 1 + R11/R10
       = 100
 ```
 
-The non-inverting input receives the filtered ECG signal.
-
 The feedback network is referenced to `VREF = 2.5 V`, giving:
 
 ```text
@@ -310,7 +308,7 @@ This preserves the 2.5 V DC operating point while amplifying the ECG component a
 
 ---
 
-# 6. Complete Front-End Gain
+## 6. Complete Front-End Gain
 
 Using a 1 mVpp differential sinusoidal input at 10 Hz, the complete front-end produces approximately:
 
@@ -335,13 +333,9 @@ because the passive band-pass network attenuates the signal slightly at 10 Hz.
 
 ---
 
-# 7. Input Range and Output Headroom
+## 7. Input Range and Output Headroom
 
-The complete front-end was tested with different differential input amplitudes to evaluate output headroom and identify the onset of saturation.
-
-The test signal was a 10 Hz differential sinusoid.
-
-Measured results:
+The complete front-end was tested with different differential input amplitudes using a 10 Hz sinusoidal signal.
 
 | Differential input | Output maximum | Output minimum | Output amplitude |
 |---:|---:|---:|---:|
@@ -360,7 +354,7 @@ Within the linear operating region, the gain remains approximately:
 Atotal ≈ 466 V/V
 ```
 
-For an ideal 0–5 V output range, the approximate maximum differential input before reaching the rails can be estimated as:
+For an ideal 0–5 V output range, the maximum differential input before reaching the rails can be estimated as:
 
 ```text
 Vin,max ≈ 5 Vpp / 466
@@ -373,15 +367,13 @@ The simulation agrees with this estimate:
 - At 11 mVpp, the output reaches the supply rails and clipping begins.
 - Increasing the input to 12 mVpp no longer produces a proportional increase in output amplitude.
 
-The current configuration therefore has an approximate simulated linear differential input range up to about 10 mVpp.
-
 ![Input range and output saturation](results/headroom_saturation.png)
 
 ---
 
-# 8. Realistic Op-Amp Model Validation
+## 8. Realistic Op-Amp Model Validation
 
-The initial front-end was developed using LTspice `UniversalOpamp2` models.
+The initial design used LTspice `UniversalOpamp2` models.
 
 To evaluate whether the design remains valid with a more realistic device model, all four op-amps were replaced by LT1679 macromodels while keeping the circuit topology and component values unchanged.
 
@@ -393,9 +385,7 @@ Frequency = 10 Hz
 Measurement interval = 4 s to 5 s
 ```
 
-The later measurement interval was selected to reduce the influence of the initial filter transient.
-
-## Generic vs. LT1679 Comparison
+The later interval was selected to reduce the influence of the initial filter transient.
 
 | Parameter | UniversalOpamp2 | LT1679 |
 |---|---:|---:|
@@ -415,23 +405,16 @@ LT1679          ≈ 464.58 V/V
 The difference is approximately:
 
 ```text
-0.02 %
+0.02%
 ```
 
 At 10 Hz, replacing the generic op-amp models with LT1679 macromodels therefore produces almost no change in the simulated small-signal gain.
 
-The LT1679-based instrumentation amplifier also remains closely centered around the 2.5 V reference:
-
-```text
-INA average offset from VREF ≈ 4 µV
-Final output average offset from VREF ≈ 32 µV
-```
-
-These results indicate that the expected low-frequency gain and bias point are preserved when the generic models are replaced by LT1679 macromodels.
+The LT1679-based instrumentation amplifier also remains closely centered around the 2.5 V reference.
 
 ---
 
-# 9. Real ECG Waveform Validation
+## 9. Real ECG Waveform Validation
 
 As a final system-level test, the front-end was evaluated using a 10-second ECG segment from MIT-BIH Arrhythmia Database Record 100.
 
@@ -446,7 +429,7 @@ Duration = 10 s
 
 The DC component of the selected ECG segment was removed before export.
 
-The waveform was then imported into LTspice as a piecewise-linear (PWL) voltage source and applied as a differential input centered around the 2.5 V common-mode voltage.
+The waveform was imported into LTspice as a piecewise-linear (PWL) voltage source and applied as a differential input centered around the 2.5 V common-mode voltage.
 
 The differential input was generated as:
 
@@ -461,7 +444,7 @@ so that:
 Vin+ - Vin- = ECG
 ```
 
-## Measured ECG Input and Output
+### Measured ECG Input and Output
 
 Measurements from 1 s to 10 s produced:
 
@@ -474,9 +457,7 @@ Measurements from 1 s to 10 s produced:
 | AFE output minimum | 1.966 V |
 | AFE output amplitude | 0.651 Vpp |
 
-The conditioned output remains well inside the 0–5 V supply range.
-
-No output clipping was observed.
+The conditioned output remains well inside the 0–5 V supply range and no clipping was observed.
 
 The effective peak-to-peak input/output ratio for this ECG segment is:
 
@@ -484,23 +465,19 @@ The effective peak-to-peak input/output ratio for this ECG segment is:
 0.650936 Vpp / 0.00151968 Vpp ≈ 428 V/V
 ```
 
-This value is lower than the approximately 465 V/V gain measured with a 10 Hz sinusoidal test signal.
+This value is lower than the approximately 465 V/V gain measured with a 10 Hz sinusoidal test signal because the ECG contains a broad range of frequency components that are affected differently by the front-end's band-pass response.
 
-This is expected because the ECG contains a broad range of frequency components that are affected differently by the front-end's band-pass response.
+The ECG peak-to-peak ratio should therefore not be interpreted as the small-signal gain at a single frequency.
 
-Therefore, the ECG peak-to-peak ratio should not be interpreted as the small-signal gain at a single frequency.
+The simulation preserves the main ECG timing and morphology, including the QRS complexes, while applying the intended analog band-limiting and amplification.
 
-The simulation preserves the principal ECG morphology and timing, including the QRS complexes, while conditioning the waveform according to the analog front-end bandwidth.
-
-Because of the polarity selected in the difference-amplifier stage, the final output waveform is inverted relative to the defined differential ECG input.
+Because of the selected polarity in the difference-amplifier stage, the final output waveform is inverted relative to the defined differential ECG input.
 
 ---
 
-# 10. LTspice Measurements
+## 10. Representative LTspice Measurements
 
-Representative LTspice measurements used throughout the project include:
-
-## Common-Mode Rejection
+### Common-Mode Rejection
 
 ```spice
 .meas tran VinCMpp PP V(VCM) FROM 0.2 TO 1
@@ -508,7 +485,7 @@ Representative LTspice measurements used throughout the project include:
 .meas tran Acm PARAM VoutCMpp/VinCMpp
 ```
 
-## Differential Gain
+### Differential Gain
 
 ```spice
 .meas tran VinDiffPP PP V(in_plus,in_minus) FROM 0.2 TO 1
@@ -516,13 +493,13 @@ Representative LTspice measurements used throughout the project include:
 .meas tran Ad PARAM VoutDiffPP/VinDiffPP
 ```
 
-## High-Pass Cutoff
+### High-Pass Cutoff
 
 ```spice
 .meas ac HP_FC WHEN mag(V(hp_out)/V(hp_in))=0.70710678 CROSS=1
 ```
 
-## Complete Band-Pass Response
+### Complete Band-Pass Response
 
 ```spice
 .meas ac BP_MAX MAX mag(V(lp_out)/V(bp_in))
@@ -531,7 +508,7 @@ Representative LTspice measurements used throughout the project include:
 .meas ac BP_FH WHEN mag(V(lp_out)/V(bp_in))=0.669 CROSS=2
 ```
 
-## Output Headroom
+### Output Headroom
 
 ```spice
 .meas tran VoutMax MAX V(afe_out) FROM 0.5 TO 1
@@ -539,7 +516,7 @@ Representative LTspice measurements used throughout the project include:
 .meas tran VoutPP PP V(afe_out) FROM 0.5 TO 1
 ```
 
-## Real ECG Validation
+### Real ECG Validation
 
 ```spice
 .meas tran ECGinMax MAX V(in_plus,in_minus) FROM 1 TO 10
@@ -553,7 +530,7 @@ Representative LTspice measurements used throughout the project include:
 
 ---
 
-# 11. Python Analysis
+## 11. Python Analysis
 
 Python is used to generate test data and visualize selected simulation results.
 
@@ -573,7 +550,7 @@ Main Python libraries:
 
 ---
 
-# Repository Structure
+## Repository Structure
 
 ```text
 ecg-analog-front-end/
@@ -610,30 +587,9 @@ ecg-analog-front-end/
 └── README.md
 ```
 
-File names may vary slightly depending on the final repository organization.
-
 ---
 
-# Key Results
-
-The main results of the project are:
-
-- A three-op-amp instrumentation-amplifier stage with approximately 5 V/V differential gain was designed and simulated.
-- The high-pass stage has a simulated cutoff of approximately 0.482 Hz.
-- The complete passive band-pass network has simulated cutoff frequencies of approximately 0.452 Hz and 43.57 Hz.
-- Resistor mismatch in the difference amplifier strongly affects common-mode rejection.
-- CMRR decreases from approximately 80 dB at 0.1 % mismatch to approximately 54 dB at 2 % mismatch.
-- The complete front-end provides approximately 465 V/V gain at 10 Hz.
-- The circuit remains approximately linear up to a 10 mVpp differential sinusoidal input.
-- Output clipping begins between 10 and 11 mVpp for the current 0–5 V supply configuration.
-- Replacing `UniversalOpamp2` with LT1679 macromodels changes the simulated 10 Hz gain by only about 0.02 %.
-- A real MIT-BIH ECG waveform was successfully passed through the complete LT1679-based front-end.
-- A 1.520 mVpp ECG segment produced approximately 0.651 Vpp at the final output without clipping.
-- The real ECG test preserved the main ECG timing and morphology while applying the intended analog band-limiting and amplification.
-
----
-
-# Tools
+## Tools
 
 - LTspice
 - Python
@@ -646,7 +602,7 @@ The main results of the project are:
 
 ---
 
-# Engineering Scope and Limitations
+## Engineering Scope and Limitations
 
 This project is intended as an engineering simulation and portfolio project rather than a clinically validated ECG acquisition system.
 
@@ -663,7 +619,7 @@ Important limitations include:
 
 ---
 
-# Possible Future Work
+## Possible Future Work
 
 Potential extensions include:
 
@@ -673,13 +629,13 @@ Potential extensions include:
 4. Model electrode-source impedance and imbalance.
 5. Investigate a driven-right-leg circuit.
 6. Interface the AFE with an ADC or microcontroller.
-7. Connect the measured analog output to the digital ECG-processing pipeline.
+7. Connect measured analog output to the digital ECG-processing pipeline.
 
 For the current portfolio scope, the simulation work is considered complete.
 
 ---
 
-# Related Project
+## Related Project
 
 A complementary digital ECG-processing project is available here:
 
@@ -720,7 +676,7 @@ RR intervals / heart rate
 
 ---
 
-# Author
+## Author
 
 Victor Hugo Ancajima Lozano  
 B.Sc. Biomedical Engineering  
@@ -732,8 +688,9 @@ https://github.com/vhancajimal
 
 ---
 
-# Disclaimer
+## Disclaimer
 
 This project is intended for educational, engineering-development, and portfolio purposes only.
 
 It is not a medical device and must not be used for diagnosis, patient monitoring, treatment decisions, or other clinical applications.
+
